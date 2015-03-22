@@ -1,0 +1,39 @@
+# this language is crazy
+
+try
+  global frontApp, frontAppName, windowTitle
+   
+  tell application "System Events" to set frontApp to name of first process whose frontmost is true
+
+  set output to "this is crazy " & frontApp
+
+  if (frontApp = "Google Chrome")
+    using terms from application "Google Chrome"
+      tell application frontApp to set currentTabUrl to URL of active tab of front window
+      tell application frontApp to set currentTabTitle to title of active tab of front window
+
+      return quoted form of frontApp & "\n" & quoted form of currentTabUrl & "\n" & quoted form of currentTabTitle
+    end using terms from
+  else if (frontApp = "iTerm")
+    tell application "iTerm"
+        tell the current terminal
+            tell the current session
+                set the_name to get name
+                set working_dir to do shell script "pwd "
+            end tell
+        end tell
+    end tell
+    return "'iTerm'" & "\n" & quoted form of the_name & "\n" & quoted form of working_dir
+  else
+    try
+      tell application "System Events" to tell (process 1 where frontmost is true)
+        set the_file_path to value of attribute "AXDocument" of window 1
+        return quoted form of frontApp & "\n" & quoted form of the_file_path
+      end tell
+    on error
+      return quoted form of frontApp & "\n" & "error"
+    end try
+  end if
+on error
+  return "error"
+end try
