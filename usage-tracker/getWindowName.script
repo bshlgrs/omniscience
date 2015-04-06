@@ -12,7 +12,7 @@ try
       tell application frontApp to set currentTabUrl to URL of active tab of front window
       tell application frontApp to set currentTabTitle to title of active tab of front window
 
-      return quoted form of frontApp & "\n" & quoted form of currentTabUrl & "\n" & quoted form of currentTabTitle
+      return quoted form of frontApp & "," & quoted form of currentTabUrl & "," & quoted form of currentTabTitle
     end using terms from
   else if (frontApp = "iTerm")
     tell application "iTerm"
@@ -23,15 +23,15 @@ try
             end tell
         end tell
     end tell
-    return "'iTerm'" & "\n" & quoted form of the_name & "\n" & quoted form of working_dir
+    return "'iTerm'" & "," & quoted form of the_name & "," & quoted form of working_dir
   else
     try
       tell application "System Events" to tell (process 1 where frontmost is true)
         set the_file_path to value of attribute "AXDocument" of window 1
-        return quoted form of frontApp & "\n" & quoted form of the_file_path
+        return quoted form of frontApp & "," & quoted form of the_file_path
       end tell
     on error
-      return quoted form of frontApp & "\n" & "error"
+      return quoted form of frontApp & "," & "error"
     end try
   end if
 on error
