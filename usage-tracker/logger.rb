@@ -1,46 +1,60 @@
 require "json"
 require "time" 
 
+class Store
+  def initialize
+    @hash_map = Hash.new
+  end
+
+  def insert(thing)
+    if @hash_map[thing]
+      @hash_map[thing]
+    else
+      @hash_map[thing] = @hash_map.size
+      @hash_map.size - 1
+    end
+  end
+
+  def get(label)
+    @hash_map[label]
+  end
+end
+
 class Log
-  attr_accessor :programs, :details, :log
+  attr_accessor :programs, :details, :activity_log, :wifi_log
 
   def initialize
-    @programs = []
-    @details = []
-    @log = []
+    @programs = Store.new
+    @details = Store.new
+    @wifi_networks = Store.new
+    @activity_log = []
+    @wifi_log = []
   end
 
-  def getEncodedProgramName(program_name)
-    idx = programs.find_index(program_name)
-    if idx
-      idx
-    else
-      programs.push(program_name)
-      programs.length - 1
-    end
+  def log_window
+    response = add_raw_string(`osascript getWindowName.script`)
+
+    eval("error = nil")
+    stuff = eval("[#{response.chomp}]") # this is obviously really dumb
+    @activity_log.add_parsed_string(stuff)
   end
 
-  def getEncodedFileName(file_name)
-    idx = details.find_index(file_name)
-    if idx
-      idx
-    else
-      details.push(file_name)
-      details.length - 1
-    end
+  def log_wifi_network
+    @wifi_log.push([Time.now, `networksetup -getairportnetwork en0`["".length..-1])
+    # or perhaps `/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I`
   end
 
-  def addRawString(string)
+  def add_raw_string(string)
     eval("error = nil")
     stuff = eval("[#{string.chomp}]") # this is obviously really dumb
-    addThing(stuff)
+    add_parsed_string(stuff)
   end
 
-  def addThing(info_array)
-    program_code = getEncodedProgramName(info_array.first)
-    other_info = info_array.drop(1).map { |item| getEncodedFileName(item) }
+  def add_parsed_string(info_array)
+    program_code = @programs.insert(info_array.first)
+    other_info = info_array.drop(1).map { |item| details.insert(item) }
 
-    log.push([Time.now(), program_code] + other_info)
+    activity_log.push([Time.now, program_code] + other_info)
   end
 end
 
@@ -54,7 +68,10 @@ def main
     end
   
   loop do
-    log.addRawString(`osascript getWindowName.script`)
+
+    log.log_window
+    log.log_wifi_network
+
     p log.details
     File.open($file_location, 'w') {|f| f.write log.to_yaml }
   end
